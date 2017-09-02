@@ -1,5 +1,5 @@
 <h1 align="center">
-    <img src="https://raw.githubusercontent.com/JonShort/dead-or-alive-bot/add-logo/logo.png" alt="dead or alive bot" title="dead-or-alive-bot" width="200">
+    <img src="https://raw.githubusercontent.com/weiran/dead-or-alive-bot/master/logo.png" alt="dead or alive bot" title="dead-or-alive-bot" width="200">
     <br>
     Dead or Alive Bot
     <br>
