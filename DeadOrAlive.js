@@ -51,6 +51,20 @@ const getEntity = async (entityId) => {
 
 const getEntities = entityIds => Promise.all(entityIds.map(entityId => getEntity(entityId)));
 
+const getHumanEntities = (entities) => {
+    const personEntities = entities.filter((entity) => {
+        if (entity.claims.P31 === undefined) return false;
+        if (entity.sitelinks.enwiki === undefined) return false;
+
+        const instanceOfValue = entity.claims.P31[0].mainsnak.datavalue.value.id;
+        return instanceOfValue === 'Q5';
+    });
+    if (personEntities.length === 0) {
+        throw new Error('not-found');
+    }
+    return personEntities;
+};
+
 const getFirstHumanEntity = (entities) => {
     const personEntity = entities.find((entity) => {
         if (entity.claims.P31 === undefined) return null;
@@ -146,8 +160,16 @@ const search = async (searchTerm) => {
     return getResultModel(wikipediaModel);
 };
 
+const searchQuery = async (searchTerm) => {
+    const entityIds = await getEntityIds(searchTerm);
+    const entities = await getEntities(entityIds);
+    const humanEntities = await getHumanEntities(entities);
+    return humanEntities.map(entity => getResultModel(getPersonModel(entity)));
+};
+
 module.exports = {
     search,
+    searchQuery,
     _private: {
         getEntities,
         getEntity,

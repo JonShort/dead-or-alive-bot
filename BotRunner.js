@@ -10,6 +10,31 @@ const parseTextFromCommand = (text, commandOffset) => {
     };
 };
 
+const buildQueryResponse = searchTerm => new Promise(async (resolve) => {
+    try {
+        const results = await DeadOrAlive.searchQuery(searchTerm);
+
+        return resolve(results.map((result, idx) => {
+            const userFriendlyMessage = result.isDead
+                ? `[${result.name}](${result.url}) died${result.hasDOB ? ` aged ${result.age}` : ''} on ${result.dateOfDeath}.`
+                : `[${result.name}](${result.url}) is alive${result.hasDOB ? ` and kicking at ${result.age} years old` : ''}.`;
+
+            return {
+                description: userFriendlyMessage,
+                id: idx,
+                input_message_content: {
+                    message_text: userFriendlyMessage,
+                },
+                title: result.name,
+                type: 'article',
+                url: result.url
+            };
+        }));
+    } catch (e) {
+        return resolve([]);
+    }
+});
+
 const buildResponse = searchTerm => new Promise(async (resolve) => {
     try {
         const result = await DeadOrAlive.search(searchTerm);
@@ -29,7 +54,7 @@ const buildResponse = searchTerm => new Promise(async (resolve) => {
         }
 
         if (e.message === WIKIDATA_ERROR) {
-            return resolve(`Oops! The bot seems to be having issues - please open an issue at https://github.com/weiran/dead-or-alive-bot/issues (include your search term) and I'll take a look 👀😁`);
+            return resolve('Oops! The bot seems to be having issues - please open an issue at https://github.com/weiran/dead-or-alive-bot/issues (include your search term) and I\'ll take a look 👀😁');
         }
 
         return resolve(e.message);
@@ -37,7 +62,7 @@ const buildResponse = searchTerm => new Promise(async (resolve) => {
 });
 
 const textReceived = async (context) => {
-    const message = context.message;
+    const { message } = context;
     let searchTerm = message.text;
 
     // parse command and input text
@@ -61,10 +86,24 @@ const textReceived = async (context) => {
     context.replyWithMarkdown(response);
 };
 
+const queryReceived = async (context) => {
+    // Don't attempt to search when no query is provided
+    if (!context.inlineQuery.query || context.inlineQuery.query.length === 0) {
+        return context.answerInlineQuery([]);
+    }
+
+    const userQuery = context.inlineQuery.query;
+    const response = await buildQueryResponse(userQuery);
+
+    return context.answerInlineQuery(response);
+};
+
 module.exports = {
+    queryReceived,
     textReceived,
     _private: {
         buildResponse,
+        buildQueryResponse,
         parseTextFromCommand
     }
 };
